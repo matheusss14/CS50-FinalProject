@@ -1,0 +1,495 @@
+{% extends "guessr/layout.html" %}
+{% load static %}
+
+{% block title %} CSguesser {% endblock %}
+
+{% block navtitle %}Who are ya?  <img src="{% static 'guessr/CUTminimalistwhite.png' %}">{% endblock %}
+
+{% block body %}
+<div style="display: flex; justify-content: center; padding: 10px; align-items: center;">
+    {% if day > 1 %}
+    <a href="{% url 'guesser' day|add:-1 %}" style="cursor: pointer;">
+        <button class="changeday">
+            <span class="material-symbols-outlined">
+            arrow_back
+            </span>
+        </button>
+    </a>
+    {% endif %}
+    <span>{{ todays.date }}</span>
+    {% if day != curDay %}
+    <a href="{% url 'guesser' day|add:1 %}" style="cursor: pointer;">
+        <button class="changeday">
+            <span class="material-symbols-outlined">
+                arrow_forward
+                </span>
+        </button>
+    </a>
+    {% endif %}
+</div>
+
+<div style="display: flex; justify-content: center; padding: 10px;">
+    <div class="card">
+        <div style="display: flex; font-family: 'Poppins';">
+            <div style="width: 50px; margin-top: 20px; text-align: center;">
+                <span id="player-role" style="width: 50px; opacity: 0; font-size: 1.3rem;"></span><br>
+                <img src="" alt="Nation" id="player-nation" style="width: 50px; opacity: 0;"><br>
+                <img src="" alt="Team" id="player-team" style="width: 50px; opacity: 0;">
+            </div>
+            <img src="{% static 'guessr/playerplaceholder.png' %}" alt='Player image' class="card-image" id="player-image">
+            <div style="width: 50px; margin-top: 20px; text-align: center;">
+                <span id="player-rating" style="width: 50px; opacity: 0; font-size: 1.5rem; font-weight: 800;"></span><br><br>
+                <span id="majorwinner" style="width: 50px; opacity: 0; font-size: 0.8rem;"></span>
+            </div>
+        </div>
+        <h1 id="player-name">?</h1>
+        <form class="guess-form" id="main-form" method="post">
+        {% csrf_token %}
+            <div style="width: 60%;">
+                <input class="guess-form-text" type="text" placeholder='Guess 1 of 6: ' id="guesstxt" autocomplete="off">
+                <div class="fill hidden" id="fill">
+                    <ul id="fill-ul" style="width: 100%;">
+
+                    </ul>
+                </div>
+            </div>
+            <input class='guess-form-submit' type="submit" value="Guess" style="cursor: pointer;" id="submitbtn">
+        </form>
+    </div>
+</div>
+<div style="display: flex; justify-content: center;" id="rules">
+    <div class="guesser-rules">
+        <h2>Who are ya? Counter-Strike is a Counter-Strike 2 trivia game</h2>
+        <ul style="list-style-type:disc;">
+            <li>You have multiple chances to guess the Counter-Strike 2 player from the most known teams from all around the world</li>
+            <li>After each guess, feedback will be revealed, showing how close your guess is to the mystery CS player in a number of categories.</li>
+            <li>Green bubbles means that that category is correct, while a yellow bubble means the guess was close in that category, but not quite right (+-2 major appearances, +-0.03 rating, same region, etc). A blank/grey bubble means it is not correct.</li>
+            <li>Example guess: David 'frozen' Cernansky
+                <br>
+                <br>
+                <div class="guesser-lineup">
+                    <div class="guesser-div">
+                        <div class="bubble yellow">
+                            <img src="https://img-cdn.hltv.org/teamlogo/m-wCSia4m35BeWhGzB9yv1.png?ixlib=java-2.1.0&w=100&s=eb47e50059db6915952ff845a59de3ab" style="width: 40px;">
+                        </div>
+                        <span>TEAM</span>
+                    </div>
+                    <div class="guesser-div">
+                        <div class="bubble yellow">
+                            <img src="https://www.hltv.org/img/static/flags/30x20/SK.gif">
+                        </div>
+                        <span>NATION</span>
+                    </div>
+                    <div class="guesser-div">
+                        <div class="bubble green">
+                            Rifler
+                        </div>
+                        <span>ROLE</span>
+                    </div>
+                    <div class="guesser-div">
+                        <div class="bubble">4<i class="fa-solid fa-arrow-down"></i></div>
+                        <span>MAJOR APPS</span>
+                    </div>
+                    <div class="guesser-div">
+                        <div class="bubble">0<i class="fa-solid fa-arrow-up"></i></div>
+                        <span>MAJOR WINS</span>
+                    </div>
+                    <div class="guesser-div">
+                        <div class="bubble green">1.15</div>
+                        <span>2024 RATING</span>
+                    </div>
+                </div>
+                <br>
+                ... Means that the mystery player is European and does not play for FaZe, but plays in the same region.
+                However, the player is also a Rifler, has won a major in less appearances than frozen, and they have the exact same rating in 2024 (Filter: 2024, Top30 Opponents).
+                <br>
+                The correct answer would be Justinas 'jL' Lekavicius.
+                <li>Nation stands for the players' nationality while Region stands for the teams' region.
+                    For example, malbsMd would have his nation as Guatemala (NA), but his region would be EU, as he currently plays for G2, who competes in Europe.
+               </li>
+           </li>
+        </ul>
+    </div>
+</div>
+
+<div style="display: none; justify-content: center;" id="guesses-area">
+    <div id="guesses" style="display: flex; flex-direction: column-reverse; align-items: center; width: 500px;">
+
+    </div>
+</div>
+
+<div style="display: none; justify-content: center;" id="winner">
+    <div class="card winner" style="background-color: #000; color: white; width: 300px; height: 300px;">
+        <h2>Congratulations!</h2>
+        <div style="margin-right: auto; padding: 0 0 0 8px;">
+            <ul>
+                <p>ty for playing)))</p>
+            </ul>
+        </div>
+        <h3 style="font-size: 0.8rem;">come back tomorrow for a new player!</h3>
+        <button id="closebtn2">Close</button>
+    </div>
+</div>
+
+<div style="display: none; justify-content: center;" id="loser">
+    <div class="card winner" style="background-color: #000; color: white; width: 300px; height: 300px;">
+        <h2>You lost!</h2>
+        <h2>Unluko</h2>
+        <h3 style="font-size: 0.8rem;">come back tomorrow for a new player!</h3>
+        <button id="closebtn">Close</button>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        let guesses = 1;
+        const input = document.querySelector('#guesstxt');
+        const form = document.querySelector('#main-form');
+
+        let debounceTimeout;
+
+        input.addEventListener('keyup', () => {
+            clearTimeout(debounceTimeout);
+
+            debounceTimeout = setTimeout(() => {
+                const p = input.value;
+
+                if (p.trim()) {
+                    fetch(`/guesser/search/autocomplete/${p}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const main = document.querySelector('#fill-ul')
+                            main.innerHTML = ''
+                            data.player.forEach(player => {
+                                let newdiv = document.createElement('li')
+                                newdiv.innerHTML = player.name
+                                main.appendChild(newdiv)
+                                newdiv.addEventListener('click', (event) => {
+                                    event.preventDefault();
+                                    document.querySelector('#guesstxt').value = player.name.trim();
+                                    main.innerHTML = ''
+                                    document.querySelector('#fill').style.display = 'none'
+                                });
+                            })
+                            document.querySelector('#fill').style.display = 'flex'
+                        })
+                        .catch(error => {
+                            console.log('Error:', error);
+                        });
+                }
+
+                const main = document.querySelector('#fill-ul')
+                main.innerHTML = ''
+                document.querySelector('#fill').style.display = 'none'
+            }, 500); 
+        });
+
+        form.onsubmit = () => {
+            if (input.value == '') {
+                alert('Please type something.')
+            } else {
+                p = input.value
+
+                fetch(`/guesser/search/${p}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data)
+                    guessed(data.player[0], data.stats[0])
+
+                    guesses++
+                    input.placeholder = `Guess ${guesses} of 6`
+
+                    if (guesses > 1) {
+                        document.querySelector('#rules').style.display = 'none'
+                        document.querySelector('#guesses-area').style.display = 'flex'
+                        document.querySelector('#closebtn2').addEventListener('click', () => {
+                            document.querySelector('#winner').style.display = 'none'
+                        });
+                    }
+                    if (guesses > 6) {
+                        input.disabled = true
+                        input.placeholder = `You lost! Unluko`
+                        document.querySelector('#submitbtn').disabled = true
+
+                        document.querySelector('#player-name').innerHTML = '{{player.name}}'
+                        document.querySelector('#player-image').src = '{{player.image|safe}}'
+                        document.querySelector('#player-nation').src = `https://www.hltv.org/img/static/flags/30x20/{{player.nation}}.gif`
+                        document.querySelector('#player-nation').style.opacity = 1
+                        document.querySelector('#player-role').style.opacity = 1
+                        document.querySelector('#player-role').innerHTML = '{{player.role}}'
+                        document.querySelector('#player-rating').style.opacity = 1
+                        document.querySelector('#player-rating').innerHTML = '{{stats.rating}}'
+                        if ('{{stats.majorWin}}' > 0) {
+                            document.querySelector('#majorwinner').style.opacity = 1
+                            document.querySelector('#majorwinner').innerHTML = `
+                            <span class="material-symbols-outlined">
+                                    trophy
+                                    </span>
+                                    Major winner!
+                            `
+                        }
+                        fetch(`/guesser/getteam/{{player.team.id}}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            document.querySelector('#player-team').src = data[0].image
+                            document.querySelector('#player-team').style.opacity = 1
+                        }).catch(error => {
+                                console.log('Something went wrong.', error)
+                            })
+
+                        document.querySelector('#loser').style.display = 'flex'
+
+                        document.querySelector('#closebtn').addEventListener('click', () => {
+                            document.querySelector('#loser').style.display = 'none'
+                        });
+                    }
+                })
+                .catch(error => {
+                    alert('Player not found', error)
+                }) 
+
+            }
+            input.value = ''
+            return false
+        }
+    })
+
+    function guessed(player, stats) {
+        playerid = '{{ player.id }}'
+        player = player
+        stats = stats
+        createlineup(player, stats)
+        if (playerid == player.id) {
+            const input = document.querySelector('#guesstxt');
+            input.disabled = true
+            input.placeholder = `You won! ggs`
+            document.querySelector('#submitbtn').disabled = true
+            document.querySelector('#player-image').src = player.image
+            document.querySelector('#player-name').innerHTML = player.name
+            document.querySelector('#player-nation').src = `https://www.hltv.org/img/static/flags/30x20/${player.nation}.gif`
+            document.querySelector('#player-nation').style.opacity = 1
+            document.querySelector('#player-role').style.opacity = 1
+            document.querySelector('#player-role').innerHTML = player.role
+            document.querySelector('#player-rating').style.opacity = 1
+            document.querySelector('#player-rating').innerHTML = stats.rating
+            if (stats.majorWin > 0) {
+                document.querySelector('#majorwinner').style.opacity = 1
+                document.querySelector('#majorwinner').innerHTML = `
+                <span class="material-symbols-outlined">
+                        trophy
+                        </span>
+                        Major winner!
+                `
+            }
+            fetch(`/guesser/getteam/${player.team_id}`)
+            .then(response => response.json())
+            .then(data => {
+                if ('{{ player.team }}' == data[0].name) {
+                    document.querySelector('#player-team').src = data[0].image
+                    document.querySelector('#player-team').style.opacity = 1
+                }
+            }).catch(error => {
+                    console.log('Something went wrong.', error)
+                })
+            setTimeout(() => {
+                document.querySelector('#winner').style.display = 'flex'
+            }, 2000); 
+        } else {
+            fetch(`/guesser/getteam/${player.team_id}`)
+            .then(response => response.json())
+            .then(data => {
+                if ('{{ player.team }}' == data[0].name) {
+                    document.querySelector('#player-team').src = data[0].image
+                    document.querySelector('#player-team').style.opacity = 1
+                }
+            })
+            .catch(error => {
+                    console.log('Something went wrong.', error)
+                })
+
+            if ('{{ player.role }}' == player.role) {
+                document.querySelector('#player-role').innerHTML = player.role
+                document.querySelector('#player-role').style.opacity = 1
+            }
+            if ('{{ player.nation }}' == player.nation) {
+                document.querySelector('#player-nation').src = `https://www.hltv.org/img/static/flags/30x20/${player.nation}.gif`
+                document.querySelector('#player-nation').style.opacity = 1
+            }
+            if ('{{ stats.rating }}' == stats.rating) {
+                document.querySelector('#player-rating').innerHTML = stats.rating
+                document.querySelector('#player-rating').style.opacity = 1
+            }
+            if (('{{stats.majorWin}}' > 0) && stats.majorWin > 0) {
+                document.querySelector('#majorwinner').style.opacity = 1
+                document.querySelector('#majorwinner').innerHTML = `
+                <span class="material-symbols-outlined">
+                        trophy
+                        </span>
+                        Major winner!
+                `
+                console.log('problem')
+            }
+        }
+    }
+
+    function createlineup(player, stats) {
+        const main = document.querySelector('#guesses')
+
+        const wrap = document.createElement('div')
+
+        const NewResLineup = document.createElement('div');
+        NewResLineup.className = 'guesser-lineup';
+
+        const team = document.createElement('div');
+        team.className = 'guesser-div';
+        const teambubble = document.createElement('div');
+        teambubble.className = 'bubble';
+        fetch(`/guesser/getteam/${player.team_id}`)
+            .then(response => response.json())
+            .then(data => {
+                teambubble.innerHTML = `
+                    <img src='${data[0].image}' style='width: 30px'>
+                    `
+                if ('{{ player.team }}' == data[0].name) {
+                    teambubble.classList.add('green')
+                } else {
+                    if (data[0].region_id == '{{player.team.region.id}}') {
+                        teambubble.classList.add('yellow')
+                    }
+                }
+            })
+            .catch(error => {
+                    console.log('Something went wrong.', error)
+                })
+        const teamspan = document.createElement('span')
+        teamspan.innerHTML = 'TEAM'
+        team.appendChild(teambubble)
+        team.appendChild(teamspan)
+
+        const nation = document.createElement('div')
+        nation.className = 'guesser-div'
+        const nationbbl = document.createElement('div')
+        nationbbl.className = 'bubble'
+        if (player.nation == '{{player.nation}}') {
+            nationbbl.classList.add('green')
+        } else {
+            if (player.region_id == '{{player.region.id}}') {
+                nationbbl.classList.add('yellow')
+            }
+        }
+        nationbbl.innerHTML = `<img src='https://www.hltv.org/img/static/flags/30x20/${player.nation}.gif'>`
+        const nationspan = document.createElement('span')
+        nationspan.innerHTML = 'NAT'
+        nation.appendChild(nationbbl)
+        nation.appendChild(nationspan)
+
+        const role = document.createElement('div')
+        role.className = 'guesser-div'
+        const rolebbl = document.createElement('div')
+        rolebbl.className = 'bubble'
+        if (player.role2 != 'null') {
+            if ((String(player.role) == '{{player.role|escapejs}}')) {
+                rolebbl.classList.add('yellow')
+        }
+        } else if (String(player.role) == '{{ player.role|escapejs }}') {
+            rolebbl.classList.add('green'); 
+        }
+        rolebbl.innerHTML = player.role
+        const rolespan = document.createElement('span')
+        rolespan.innerHTML = 'ROLE'
+        role.appendChild(rolebbl)
+        role.appendChild(rolespan)
+
+        const majorapps = document.createElement('div')
+        majorapps.className = 'guesser-div'
+        const majorAbbl = document.createElement('div')
+        majorAbbl.className = 'bubble'
+        if ((stats.majorApps) == '{{stats.majorApps}}') {
+            majorAbbl.classList.add('green')
+        }
+        majorAbbl.innerHTML = stats.majorApps
+        if (stats.majorApps > '{{stats.majorApps}}') {
+            if (stats.majorApps - '{{stats.majorApps}}' < 3) {
+                majorAbbl.classList.add('yellow')
+            }
+            majorAbbl.innerHTML = stats.majorApps + '<i class="fa-solid fa-arrow-down">'
+        } if (stats.majorApps < '{{stats.majorApps}}') {
+            if ('{{stats.majorApps}}' - stats.majorApps < 3) {
+                majorAbbl.classList.add('yellow')
+            }
+            majorAbbl.innerHTML = stats.majorApps + '<i class="fa-solid fa-arrow-up">'
+        }
+        const majorappsspan = document.createElement('span')
+        majorappsspan.innerHTML = 'MAJOR APPS'
+        majorapps.appendChild(majorAbbl)
+        majorapps.appendChild(majorappsspan)
+
+        const majorwins = document.createElement('div')
+        majorwins.className = 'guesser-div'
+        const majorwinsbbl = document.createElement('div')
+        majorwinsbbl.className = 'bubble'
+        if ((stats.majorWin) == '{{stats.majorWin}}') {
+            majorwinsbbl.classList.add('green')
+        }
+        majorwinsbbl.innerHTML = stats.majorWin
+        if (stats.majorWin > '{{stats.majorWin}}') {
+            if (stats.majorWin - '{{stats.majorWin}}' < 3) {
+                majorwinsbbl.classList.add('yellow')
+            }
+            majorwinsbbl.innerHTML = stats.majorWin + '<i class="fa-solid fa-arrow-down">'
+        } if (stats.majorWin < '{{stats.majorWin}}') {
+            if ('{{stats.majorWin}}' - stats.majorWin < 3) {
+                majorwinsbbl.classList.add('yellow')
+            }
+            majorwinsbbl.innerHTML = stats.majorWin + '<i class="fa-solid fa-arrow-up">'
+        }
+        const majorwinsspan = document.createElement('span')
+        majorwinsspan.innerHTML = 'MAJOR WINS'
+        majorwins.appendChild(majorwinsbbl)
+        majorwins.appendChild(majorwinsspan)
+        
+
+        const rating = document.createElement('div')
+        rating.className = 'guesser-div'
+        const ratingbbl = document.createElement('div')
+        ratingbbl.className = 'bubble'
+        if ((stats.rating) == '{{stats.rating}}') {
+            ratingbbl.classList.add('green')
+        }
+        ratingbbl.innerHTML = stats.rating
+        if (stats.rating > '{{stats.rating}}') {
+            if (stats.rating - '{{stats.rating}}' < 0.05) {
+                ratingbbl.classList.add('yellow')
+            }
+            ratingbbl.innerHTML = stats.rating + '<i class="fa-solid fa-arrow-down">'
+        } if (stats.rating < '{{stats.rating}}') {
+            if ('{{stats.rating}}' - stats.rating < 0.05) {
+                ratingbbl.classList.add('yellow')
+            }
+            ratingbbl.innerHTML = stats.rating + '<i class="fa-solid fa-arrow-up">'
+        }
+        const ratingspan = document.createElement('span')
+        ratingspan.innerHTML = '2024 RATING'
+        rating.appendChild(ratingbbl)
+        rating.appendChild(ratingspan)
+
+        NewResLineup.appendChild(team)
+        NewResLineup.appendChild(nation)
+        NewResLineup.appendChild(role)
+        NewResLineup.appendChild(majorapps)
+        NewResLineup.appendChild(majorwins)
+        NewResLineup.appendChild(rating)
+
+        const name = document.createElement('h1')
+        name.innerHTML = player.name
+        name.className = 'player-name'
+
+        wrap.appendChild(name)
+        wrap.appendChild(NewResLineup)
+
+        main.appendChild(wrap)
+    }
+
+</script>
+
+{% endblock %}

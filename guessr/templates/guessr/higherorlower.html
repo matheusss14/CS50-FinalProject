@@ -1,0 +1,23 @@
+{% extends "guessr/layout.html" %}
+{% load static %}
+
+{% block title %}Higher or lower{% endblock %}
+
+{% block body %}
+    <div class="player">
+        <div class="player-identification">
+            <img src="{% static 'guessr/playerplaceholder.png' %}">
+        </div>
+        <div>
+            <ul>
+                <li>firepower</li>
+                <li>entrying</li>
+                <li>trading</li>
+                <li>opening</li>
+                <li>clutching</li>
+                <li>sniping</li>
+                <li>utility</li>
+            </ul>
+        </div>
+    </div>
+{% endblock %}

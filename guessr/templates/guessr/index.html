@@ -1,0 +1,29 @@
+{% extends "guessr/layout.html" %}
+
+{% block title %} CStrivia {% endblock %}
+{% load static %}
+
+{% block navtitle %}CStrivia{% endblock %}
+
+{% block body %}
+
+    <div style="padding: 30px 20px;">
+        <h1 style="font-size: 3rem; font-weight: 600; margin-bottom: 30px; margin-left: 10px;">Counter-Strike trivia games</h1>
+        <div class="games-list">
+            <div class="game">
+                <a href="{% url 'guesser' curDay %}">
+                    <div class="game-option" style="background-image: url('{% static 'guessr/Screenshot_19.png' %}');">
+                        <div class="game-option-text">
+                            <div class="game-option-text-text2">
+                                <h1>Who are ya</h1>
+                                <p>Guess the CS2 player!</p>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+        </div>
+
+    </div>
+{% endblock %}
